@@ -41,6 +41,13 @@ class SlackClient {
 			return;
 		}
 
+		/**
+		 * TODO: add this filtering logic
+		 **/
+		//  || message.channel !== "D9DG5SHV4" || !lcQuestion.includes('u9ckznltw')) {
+		// 	return;
+		// }
+
 		try {
 			intent.process(questionData, this._registry, this._log, (error, response) => {
 				if (error) {
