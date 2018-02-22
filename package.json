@@ -1,0 +1,36 @@
+{
+  "name": "emcee-server",
+  "version": "1.0.0",
+  "description": "A slackbot to help emcee my talks.",
+  "main": "server/service.js",
+  "scripts": {
+    "test": "NODE_ENV=TEST snyk test && eslint bin server && nyc mocha --exit --recursive test",
+    "start": "node bin/run"
+  },
+  "engines": {
+    "node": "8.9.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mattbontrager/emcee-server.git"
+  },
+  "author": "Matt Bontrager",
+  "license": "CC-BY-ND-4.0",
+  "dependencies": {
+    "@slack/client": "^3.15.0",
+    "bunyan": "^1.8.12",
+    "dotenv": "^4.0.0",
+    "dtrace-provider": "^0.8.6",
+    "eslint": "^4.18.0",
+    "express": "^4.16.2",
+    "istanbul": "^0.4.5",
+    "snyk": "^1.69.7",
+    "superagent": "^3.8.2"
+  },
+  "devDependencies": {
+    "mocha": "^4.1.0",
+    "nyc": "^11.4.1",
+    "should": "^13.2.0",
+    "supertest": "^3.0.0"
+  }
+}
