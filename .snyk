@@ -1,0 +1,35 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.10.1
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  'npm:hoek:20180212':
+    - '@slack/client > request > hawk > boom > hoek':
+        reason: already documented vuln in policy
+        expires: '2018-03-24T00:28:49.924Z'
+      '@slack/client > request > hawk > hoek':
+        reason: None given
+        expires: '2018-03-24T00:41:16.096Z'
+    - '@slack/client > request > hawk > sntp > hoek':
+        reason: already documented vuln in policy
+        expires: '2018-03-24T00:28:49.927Z'
+      '@slack/client > request > hawk > boom > hoek':
+        reason: None given
+        expires: '2018-03-24T00:41:16.106Z'
+    - '@slack/client > request > hawk > cryptiles > boom > hoek':
+        reason: None given
+        expires: '2018-03-24T00:28:49.928Z'
+      '@slack/client > request > hawk > sntp > hoek':
+        reason: cuz
+        expires: '2018-03-24T00:41:16.106Z'
+    - '@slack/client > request > hawk > cryptiles > boom > hoek':
+        reason: cuz again
+        expires: '2018-03-24T00:41:16.106Z'
+  'npm:tunnel-agent:20170305':
+    - '@slack/client > request > tunnel-agent':
+        reason: nps
+        expires: '2018-03-24T00:41:16.106Z'
+  'npm:is-my-json-valid:20180214':
+    - '@slack/client > request > har-validator > is-my-json-valid':
+        reason: idc
+        expires: '2018-03-24T00:41:16.106Z'
+patch: {}
