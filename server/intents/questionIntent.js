@@ -23,16 +23,18 @@ module.exports.process = function process(_qD, registry, log, cb) {
 			return cb(false, 'Got it. Matt will answer your question at the end of his talk.');
 		});
 
-	// request.get(`http://${service.ip}:${service.port}/service/${question}`)
-	// 	.set('X-EMCEE-SERVICE-TOKEN', service.accessToken)
-	// 	.end((err, res) => {
-	// 		if (err || res.statusCode != 200 || !res.body.result) {
-	// 			log.error(err);
-	// 			return cb(false, `I had a problem finding out the time in ${question}`);
-	// 		}
+	/* saving this for admin-side query * /
+	request.get(`http://${service.ip}:${service.port}/service/${question}`)
+		.set('X-EMCEE-SERVICE-TOKEN', service.accessToken)
+		.end((err, res) => {
+			if (err || res.statusCode != 200 || !res.body.result) {
+				log.error(err);
+				return cb(false, `I had a problem finding out the time in ${question}`);
+			}
 
-	// 		return cb(false, 'Got it. Matt will answer your question at the end of his talk.');
+			return cb(false, 'Got it. Matt will answer your question at the end of his talk.');
 
-	// 		// return cb(false, `In ${question}, it is now ${res.body.result}`);
-	// 	});
+			// return cb(false, `In ${question}, it is now ${res.body.result}`);
+		});
+	/* */
 };
