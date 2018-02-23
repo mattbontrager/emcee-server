@@ -29,22 +29,48 @@ class SlackClient {
 
 	_handleOnMessage(message) {
 		this._log.info(`in _handleOnMessage for emcee: ${JSON.stringify(message)}`);
+
+		const trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, '');
+		this._log.info(`trimmed: ${trimmed}`);
+
+		const words = trimmed.split(' ');
+		this._log.info(`number of words: ${words.length}`);
+
+		const isLongEnough = words.length > 2;
+		this._log.info(`question is long enough? ${isLongEnough}`);
+
+		const isRightChannel = message.channel === 'D9DG5SHV4';
+		this._log.info(`isRightChannel? ${isRightChannel}`);
+
+		const isAddressedToEmcee = message.text.includes('<@U9CKZNLTW>');
+		this._log.info(`isAddressedToEmcee? ${isAddressedToEmcee}`);
+
+		const intent = require('./intents/questionIntent');
+
 		const questionData = {
-			question: message.text,
+			question: trimmed,
 			asker_id: message.user,
 			question_channel: message.channel
 		};
-		const lcQuestion = message.text.toLowerCase();
-		const intent = require('./intents/questionIntent');
 
-		if (!lcQuestion.includes('emcee')) {
+		if (!isRightChannel) {
+			if (!isAddressedToEmcee) {
+				return;
+			}
+		}
+
+		if (!isLongEnough) {
 			return;
 		}
+
+		// if (message.channel !== 'D9DG5SHV4' || !message.text.includes('<@U9CKZNLTW>') || isTooShort) {
+		// 	return;
+		// }
 
 		/**
 		 * TODO: add this filtering logic
 		 **/
-		//  || message.channel !== "D9DG5SHV4" || !lcQuestion.includes('u9ckznltw')) {
+		//  || message.channel !== "D9DG5SHV4" || !lcQuestion.includes('<@U9CKZNLTW>')) {
 		// 	return;
 		// }
 
