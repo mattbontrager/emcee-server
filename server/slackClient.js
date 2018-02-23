@@ -30,6 +30,14 @@ class SlackClient {
 	_handleOnMessage(message) {
 		this._log.info(`in _handleOnMessage for emcee: ${JSON.stringify(message)}`);
 
+		if (!message.text) {
+			return;
+		}
+
+		/**
+		 * TODO: move this out to emcee-questions microservice
+		 */
+
 		const trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, '');
 		this._log.info(`trimmed: ${trimmed}`);
 
@@ -45,6 +53,8 @@ class SlackClient {
 		const isAddressedToEmcee = message.text.includes('<@U9CKZNLTW>');
 		this._log.info(`isAddressedToEmcee? ${isAddressedToEmcee}`);
 
+		const isMatt = message.user === 'U8MNYF3H6';
+
 		const intent = require('./intents/questionIntent');
 
 		const questionData = {
@@ -59,20 +69,63 @@ class SlackClient {
 			}
 		}
 
-		if (!isLongEnough) {
+		if (!isLongEnough && !isMatt) {
 			return;
 		}
 
-		// if (message.channel !== 'D9DG5SHV4' || !message.text.includes('<@U9CKZNLTW>') || isTooShort) {
-		// 	return;
-		// }
+		if (isMatt) {
+			const triggerSessionBeginActions = () => {
+				// timestamp begin talk time in db
+			};
 
-		/**
-		 * TODO: add this filtering logic
-		 **/
-		//  || message.channel !== "D9DG5SHV4" || !lcQuestion.includes('<@U9CKZNLTW>')) {
-		// 	return;
-		// }
+			const triggerSessionEndActions = () => {
+				// timestamp end talk time in db
+			};
+
+			const triggerTalkStartActions = () => {
+				// whatever these need to be
+			};
+
+			const triggerTalkDoneActions = () => {
+				// timestamp in db
+				// serve up any questions that may have been asked during the talk
+			};
+
+			const command = trimmed;
+			const aboutMeLink = '[Matt Bontrager\'s Bio](https://about.me/mattbontrager "Matt Bontrager: About Me")';
+
+			let response;
+			let channel;
+
+			switch(command) {
+			case 'send about me':
+				response = aboutMeLink;
+				channel = 'C9C4Q60UR';
+				break;
+			case 'begin session':
+				triggerSessionBeginActions();
+				response = 'whatever it needs to be';
+				channel = message.channel;
+				break;
+			case 'end session':
+				triggerSessionEndActions();
+				response = 'whatever it needs to be';
+				channel = message.channel;
+				break;
+			case 'starting talk':
+				triggerTalkStartActions();
+				response = 'whatever it needs to be';
+				channel = message.channel;
+				break;
+			case 'done talking':
+				triggerTalkDoneActions();
+				response = 'whatever it needs to be';
+				channel = message.channel;
+				break;
+			}
+
+			return this._rtm.sendMessage(response, channel);
+		}
 
 		try {
 			intent.process(questionData, this._registry, this._log, (error, response) => {
