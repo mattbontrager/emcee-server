@@ -15,7 +15,6 @@ const chooseAnAnswer = () => {
 	const max = responses.length;
 	const rando = Math.floor(Math.random() * (max - min + 1)) + min;
 	const therandom = rando - 1;
-	console.log('the random: ', therandom);
 	return responses[therandom];
 };
 
