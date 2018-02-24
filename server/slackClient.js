@@ -11,7 +11,6 @@ class SlackClient {
 			useRtmConnect: true,
 			dataStore: false
 		});
-		// this._rtm = new RtmClient(token, {logLevel: logLevel});
 		this._registry = registry;
 		this._log = log;
 
@@ -34,101 +33,33 @@ class SlackClient {
 			return;
 		}
 
-		/**
-		 * TODO: move this out to emcee-questions microservice
-		 */
-
 		const trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, '');
-		this._log.info(`trimmed: ${trimmed}`);
-
 		const words = trimmed.split(' ');
-		this._log.info(`number of words: ${words.length}`);
-
 		const isLongEnough = words.length > 2;
-		this._log.info(`question is long enough? ${isLongEnough}`);
-
 		const isRightChannel = message.channel === 'D9DG5SHV4';
-		this._log.info(`isRightChannel? ${isRightChannel}`);
-
 		const isAddressedToEmcee = message.text.includes('<@U9CKZNLTW>');
-		this._log.info(`isAddressedToEmcee? ${isAddressedToEmcee}`);
-
-		const isMatt = message.user === 'U8MNYF3H6';
-
-		const intent = require('./intents/questionIntent');
-
-		const questionData = {
-			question: trimmed,
-			asker_id: message.user,
-			question_channel: message.channel
-		};
-
 		if (!isRightChannel) {
 			if (!isAddressedToEmcee) {
 				return;
 			}
 		}
 
-		if (!isLongEnough && !isMatt) {
+		const isSpeaker = message.user === process.env.SPEAKER_ID;
+		if (!isLongEnough && !isSpeaker) {
 			return;
 		}
 
-		if (isMatt) {
-			const triggerSessionBeginActions = () => {
-				// timestamp begin talk time in db
-			};
+		const intent = (isSpeaker) ? require('./intents/speakerIntent'): require('./intents/questionIntent');
 
-			const triggerSessionEndActions = () => {
-				// timestamp end talk time in db
-			};
+		const slackMessage = (isSpeaker) ? {
+			question: trimmed,
+			asker_id: message.user,
+			question_channel: message.channel
+		}: {command: trimmed};
 
-			const triggerTalkStartActions = () => {
-				// whatever these need to be
-			};
-
-			const triggerTalkDoneActions = () => {
-				// timestamp in db
-				// serve up any questions that may have been asked during the talk
-			};
-
-			const command = trimmed;
-			const aboutMeLink = '[Matt Bontrager\'s Bio](https://about.me/mattbontrager "Matt Bontrager: About Me")';
-
-			let response;
-			let channel;
-
-			switch(command) {
-			case 'send about me':
-				response = aboutMeLink;
-				channel = 'C9C4Q60UR';
-				break;
-			case 'begin session':
-				triggerSessionBeginActions();
-				response = 'whatever it needs to be';
-				channel = message.channel;
-				break;
-			case 'end session':
-				triggerSessionEndActions();
-				response = 'whatever it needs to be';
-				channel = message.channel;
-				break;
-			case 'starting talk':
-				triggerTalkStartActions();
-				response = 'whatever it needs to be';
-				channel = message.channel;
-				break;
-			case 'done talking':
-				triggerTalkDoneActions();
-				response = 'whatever it needs to be';
-				channel = message.channel;
-				break;
-			}
-
-			return this._rtm.sendMessage(response, channel);
-		}
 
 		try {
-			intent.process(questionData, this._registry, this._log, (error, response) => {
+			intent.process(slackMessage, this._registry, (error, response) => {
 				if (error) {
 					this._log.error(error.message);
 					return;
@@ -138,7 +69,7 @@ class SlackClient {
 			});
 		} catch(err) {
 			this._log.error(err);
-			this._log.error(questionData.question);
+			this._log.error(slackMessage[Object.keys(slackMessage)[0]]);
 			this._rtm.sendMessage('I\'m so sorry! But, I didn\'t catch that question. Please ask again.', message.channel);
 		}
 	}

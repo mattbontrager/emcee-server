@@ -16,11 +16,11 @@ const log = {
 };
 
 module.exports = {
-	// witToken: process.env.WIT_TOKEN,
 	slackToken: process.env.SLACK_TOKEN,
 	slackLogLevel: 'verbose',
 	serviceTimeout: 30,
 	emceeApiToken: process.env.EMCEE_API_TOKEN,
+	speakerId: process.env.SPEAKER_ID,
 	log: (env) => {
 		if (env) {
 			return log[env]();
@@ -28,9 +28,3 @@ module.exports = {
 		return log[process.env.NODE_ENV || 'development']();
 	}
 };
-
-
-
-// slack client id: 295300613286.319294540727
-// slack client secret: e7b9c1a626a9379c8abc9b228265f719
-// slack verification token: 43tWPafuUft0kr0W5J7Y6JSvs
