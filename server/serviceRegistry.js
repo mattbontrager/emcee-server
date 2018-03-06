@@ -6,12 +6,13 @@ class ServiceRegistry {
 		this._services = [];
 		this._timeout = timeout;
 		this._log = log;
+		this._development = false;
 	}
 
 	add(intent, ip, port, accessToken) {
 		const key = intent + ip + port + accessToken;
-		this._log.info(`service ip: ${ip}`);
-		this._log.info(`service port: ${port}`);
+		!!this._development && this._log.info(`service ip: ${ip}`);
+		!!this._development && this._log.info(`service port: ${port}`);
 
 		if(!this._services[key]) {
 			this._services[key] = {};
@@ -21,13 +22,13 @@ class ServiceRegistry {
 			this._services[key].intent = intent;
 			this._services[key].accessToken = accessToken;
 
-			this._log.info(`Added service for intent ${intent} on ${ip}:${port}`);
+			!!this._development && this._log.info(`Added service for intent ${intent} on ${ip}:${port}`);
 			this._cleanup();
 			return;
 		}
 
 		this._services[key].timestamp = Math.floor(new Date() / 1000);
-		this._log.info(`Updated service for intent ${intent} on ${ip}:${port}`);
+		!!this._development && this._log.info(`Updated service for intent ${intent} on ${ip}:${port}`);
 		this._cleanup();
 	}
 
@@ -51,7 +52,7 @@ class ServiceRegistry {
 
 		for (let key in this._services) {
 			if (this._services[key].timestamp + this._timeout < now) {
-				this._log.info(`Removed service for intent ${this._services[key].intent}`);
+				!!this._development && this._log.info(`Removed service for intent ${this._services[key].intent}`);
 				delete this._services[key];
 			}
 		}
