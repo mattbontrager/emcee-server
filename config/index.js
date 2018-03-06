@@ -20,6 +20,7 @@ module.exports = {
 	slackLogLevel: 'verbose',
 	serviceTimeout: 30,
 	emceeApiToken: process.env.EMCEE_API_TOKEN,
+	emceeSlackId: process.env.EMCEE_SLACK_ID,
 	speakerId: process.env.SPEAKER_ID,
 	log: (env) => {
 		if (env) {

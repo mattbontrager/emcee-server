@@ -10,6 +10,8 @@ class ServiceRegistry {
 
 	add(intent, ip, port, accessToken) {
 		const key = intent + ip + port + accessToken;
+		this._log.info(`service ip: ${ip}`);
+		this._log.info(`service port: ${port}`);
 
 		if(!this._services[key]) {
 			this._services[key] = {};

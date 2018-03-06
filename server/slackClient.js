@@ -23,54 +23,107 @@ class SlackClient {
 	}
 
 	_addAuthenticatedHandler(handler) {
+		this._log.info('in _addAuthenticatedHandler');
 		this._rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, handler.bind(this));
 	}
 
 	_handleOnMessage(message) {
 		this._log.info(`in _handleOnMessage for emcee: ${JSON.stringify(message)}`);
 
-		if (!message.text) {
+		if (!message || !message.text || !message.text.length) {
 			return;
 		}
 
-		const trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, '');
-		const words = trimmed.split(' ');
-		const isLongEnough = words.length > 2;
-		const isRightChannel = message.channel === 'D9DG5SHV4';
-		const isAddressedToEmcee = message.text.includes('<@U9CKZNLTW>');
-		if (!isRightChannel) {
-			if (!isAddressedToEmcee) {
-				return;
+		var isNotSpeaker = message.user !== process.env.SPEAKER_ID,
+			// eslint-disable-next-line
+			trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, ''),
+			words = trimmed.split(' '),
+			isLongEnough = words.length > 2,
+			isWrongChannel = (message.channel !== 'D9DG5SHV4' || message.channel !== 'C9C4Q60UR') ? true: false,
+			isNotAddressedToEmcee = !message.text.includes('<@U9CKZNLTW>');
+
+		if (isNotAddressedToEmcee) {
+			this._log.warn('not addressed to Emcee so he shouldnt care about it.');
+			return;
+		}
+
+		/** don't process the message if it is too short */
+		if (!message.text) {
+			this._log.warn('no message text passed to _handleOnMessage');
+			return;
+		}
+		/** kill it if the message is in the wrong channel AND is not addressed to the emcee bot */
+		if (isWrongChannel && isNotAddressedToEmcee && isNotSpeaker) {
+			this._log.warn('is in wrong channel and is not addressed to emcee');
+			return;
+		}
+		/** kill it if the message is too short AND did not come from the speaker */
+		if (!isLongEnough && isNotSpeaker) {
+			this._log.warn('question is not long enough and didnot come from the speaker');
+			return;
+		}
+
+		if (isNotSpeaker && isLongEnough) {
+			this._log.info('is from audience and is long enough');
+			const _qd = {
+				question: trimmed,
+				asker_id: message.user,
+				question_channel: message.channel
+			};
+			this._handleAudienceQuestion(_qd, message.channel);
+		} else {
+			this._log.info('is from the speaker. going to commands');
+			const _cd = {
+				command: trimmed
+			};
+			if (trimmed === 'aboutme') {
+				_cd.type = 'get';
+				this._handleSpeakerCommand(_cd, 'C9C4Q60UR');
+			} else {
+				_cd.type = 'post';
+				this._handleSpeakerCommand(_cd, message.channel);
 			}
 		}
+	}
 
-		const isSpeaker = message.user === process.env.SPEAKER_ID;
-		if (!isLongEnough && !isSpeaker) {
-			return;
-		}
-
-		const intent = (isSpeaker) ? require('./intents/speakerIntent'): require('./intents/questionIntent');
-
-		const slackMessage = (isSpeaker) ? {
-			question: trimmed,
-			asker_id: message.user,
-			question_channel: message.channel
-		}: {command: trimmed};
-
-
+	_handleAudienceQuestion(slackMessage, channel) {
+		this._log.info('in _handleAudienceQuestion');
+		var intent = require('./intents/questionIntent');
 		try {
+			this._log.info('trying the questionIntent.process now');
 			intent.process(slackMessage, this._registry, (error, response) => {
 				if (error) {
 					this._log.error(error.message);
 					return;
 				}
 
-				return this._rtm.sendMessage(response, message.channel);
+				return this._rtm.sendMessage(response, channel);
 			});
-		} catch(err) {
+		} catch (err) {
 			this._log.error(err);
 			this._log.error(slackMessage[Object.keys(slackMessage)[0]]);
-			this._rtm.sendMessage('I\'m so sorry! But, I didn\'t catch that question. Please ask again.', message.channel);
+			return this._rtm.sendMessage('I\'m so sorry! But, I didn\'t catch that question. Please ask again.', channel);
+		}
+	}
+
+	_handleSpeakerCommand(slackMessage, channel) {
+		this._log.info('in _handleSpeakerCommand');
+		var intent = require('./intents/commandIntent');
+
+		try {
+			this._log.info('trying the commandIntent.process now');
+			intent.process(slackMessage, this._registry, (error, response) => {
+				if (error) {
+					this._log.error(error.message);
+					return;
+				}
+
+				return this._rtm.sendMessage(response, channel);
+			});
+		} catch (err) {
+			this._log.error(err);
+			this._log.error(slackMessage[Object.keys(slackMessage)[0]]);
+			return this._rtm.sendMessage('I\'m so sorry! But, I dropped that command somewhere. Please try again.', channel);
 		}
 	}
 
