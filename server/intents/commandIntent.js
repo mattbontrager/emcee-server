@@ -38,7 +38,7 @@ module.exports.process = function process(_commandData, registry, cb) {
 			.end((err, res) => {
 				if (err || res.statusCode !== 201) {
 					log.error(err);
-					return cb(false, `:hankey: you sent a command I didn\'t recognize: ${command}.`);
+					return cb(false, `:hankey: you sent a command I didn't recognize: ${command}.`);
 				} else if (res.body.warning) {
 					return cb(false, `:hear_no_evil: There may have been a problem with your command: ${command}`);
 				} else {

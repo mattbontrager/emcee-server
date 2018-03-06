@@ -1,6 +1,7 @@
 'use strict';
 
 require('dotenv').config();
+
 const bunyan = require('bunyan');
 
 const log = {
