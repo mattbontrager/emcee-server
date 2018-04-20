@@ -5,6 +5,7 @@ const service = express();
 const ServiceRegistry = require('./serviceRegistry');
 
 module.exports = (config) => {
+	// const log = config.log();
 	const serviceRegistry = new ServiceRegistry(config.serviceTimeout, config.log());
 
 	service.set('serviceRegistry', serviceRegistry);
@@ -19,7 +20,7 @@ module.exports = (config) => {
 
 		const serviceIntent = req.params.intent;
 		const servicePort = req.params.port;
-		const serviceIp = req.connection.remoteAddress.includes('::') ? `[${req.connection.remoteAddress}]` : req.connection.remoteAddress;
+		const serviceIp = '127.0.0.1';
 
 		serviceRegistry.add(serviceIntent, serviceIp, servicePort, req.get('X-EMCEE-SERVICE-TOKEN'));
 		res.json({result: `${serviceIntent} at ${serviceIp}:${servicePort}`});

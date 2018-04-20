@@ -11,7 +11,6 @@ class SlackClient {
 			useRtmConnect: true,
 			dataStore: false
 		});
-		// this._rtm = new RtmClient(token, {logLevel: logLevel});
 		this._registry = registry;
 		this._log = log;
 
@@ -24,69 +23,107 @@ class SlackClient {
 	}
 
 	_addAuthenticatedHandler(handler) {
+		this._log.info('in _addAuthenticatedHandler');
 		this._rtm.on(CLIENT_EVENTS.RTM.AUTHENTICATED, handler.bind(this));
 	}
 
 	_handleOnMessage(message) {
 		this._log.info(`in _handleOnMessage for emcee: ${JSON.stringify(message)}`);
 
-		const trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, '');
-		this._log.info(`trimmed: ${trimmed}`);
-
-		const words = trimmed.split(' ');
-		this._log.info(`number of words: ${words.length}`);
-
-		const isLongEnough = words.length > 2;
-		this._log.info(`question is long enough? ${isLongEnough}`);
-
-		const isRightChannel = message.channel === 'D9DG5SHV4';
-		this._log.info(`isRightChannel? ${isRightChannel}`);
-
-		const isAddressedToEmcee = message.text.includes('<@U9CKZNLTW>');
-		this._log.info(`isAddressedToEmcee? ${isAddressedToEmcee}`);
-
-		const intent = require('./intents/questionIntent');
-
-		const questionData = {
-			question: trimmed,
-			asker_id: message.user,
-			question_channel: message.channel
-		};
-
-		if (!isRightChannel) {
-			if (!isAddressedToEmcee) {
-				return;
-			}
-		}
-
-		if (!isLongEnough) {
+		if (!message || !message.text || !message.text.length) {
 			return;
 		}
 
-		// if (message.channel !== 'D9DG5SHV4' || !message.text.includes('<@U9CKZNLTW>') || isTooShort) {
-		// 	return;
-		// }
+		var isNotSpeaker = message.user !== process.env.SPEAKER_ID,
+			// eslint-disable-next-line
+			trimmed = message.text.replace(/\s?<@U9CKZNLTW>\s?/g, ''),
+			words = trimmed.split(' '),
+			isLongEnough = words.length > 2,
+			isWrongChannel = (message.channel !== 'D9DG5SHV4' || message.channel !== 'C9C4Q60UR') ? true: false,
+			isNotAddressedToEmcee = !message.text.includes('<@U9CKZNLTW>');
 
-		/**
-		 * TODO: add this filtering logic
-		 **/
-		//  || message.channel !== "D9DG5SHV4" || !lcQuestion.includes('<@U9CKZNLTW>')) {
-		// 	return;
-		// }
+		if (isNotAddressedToEmcee) {
+			this._log.warn('not addressed to Emcee so he shouldnt care about it.');
+			return;
+		}
 
+		/** don't process the message if it is too short */
+		if (!message.text) {
+			this._log.warn('no message text passed to _handleOnMessage');
+			return;
+		}
+		/** kill it if the message is in the wrong channel AND is not addressed to the emcee bot */
+		if (isWrongChannel && isNotAddressedToEmcee && isNotSpeaker) {
+			this._log.warn('is in wrong channel and is not addressed to emcee');
+			return;
+		}
+		/** kill it if the message is too short AND did not come from the speaker */
+		if (!isLongEnough && isNotSpeaker) {
+			this._log.warn('question is not long enough and didnot come from the speaker');
+			return;
+		}
+
+		if (isNotSpeaker && isLongEnough) {
+			this._log.info('is from audience and is long enough');
+			const _qd = {
+				question: trimmed,
+				asker_id: message.user,
+				question_channel: message.channel
+			};
+			this._handleAudienceQuestion(_qd, message.channel);
+		} else {
+			this._log.info('is from the speaker. going to commands');
+			const _cd = {
+				command: trimmed
+			};
+			if (trimmed === 'aboutme') {
+				_cd.type = 'get';
+				this._handleSpeakerCommand(_cd, 'C9C4Q60UR');
+			} else {
+				_cd.type = 'post';
+				this._handleSpeakerCommand(_cd, message.channel);
+			}
+		}
+	}
+
+	_handleAudienceQuestion(slackMessage, channel) {
+		this._log.info('in _handleAudienceQuestion');
+		var intent = require('./intents/questionIntent');
 		try {
-			intent.process(questionData, this._registry, this._log, (error, response) => {
+			this._log.info('trying the questionIntent.process now');
+			intent.process(slackMessage, this._registry, (error, response) => {
 				if (error) {
 					this._log.error(error.message);
 					return;
 				}
 
-				return this._rtm.sendMessage(response, message.channel);
+				return this._rtm.sendMessage(response, channel);
 			});
-		} catch(err) {
+		} catch (err) {
 			this._log.error(err);
-			this._log.error(questionData.question);
-			this._rtm.sendMessage('I\'m so sorry! But, I didn\'t catch that question. Please ask again.', message.channel);
+			this._log.error(slackMessage[Object.keys(slackMessage)[0]]);
+			return this._rtm.sendMessage('I\'m so sorry! But, I didn\'t catch that question. Please ask again.', channel);
+		}
+	}
+
+	_handleSpeakerCommand(slackMessage, channel) {
+		this._log.info('in _handleSpeakerCommand');
+		var intent = require('./intents/commandIntent');
+
+		try {
+			this._log.info('trying the commandIntent.process now');
+			intent.process(slackMessage, this._registry, (error, response) => {
+				if (error) {
+					this._log.error(error.message);
+					return;
+				}
+
+				return this._rtm.sendMessage(response, channel);
+			});
+		} catch (err) {
+			this._log.error(err);
+			this._log.error(slackMessage[Object.keys(slackMessage)[0]]);
+			return this._rtm.sendMessage('I\'m so sorry! But, I dropped that command somewhere. Please try again.', channel);
 		}
 	}
 
